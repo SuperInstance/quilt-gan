@@ -22,9 +22,10 @@
   .block { padding: 6px 9px; margin: 5px 0; border-radius: 4px; cursor: grab; user-select: none; border: 1px solid; }
   .block.G { background: #0f2416; border-color: #1f5c33; color: #9fe8b0; }
   .block.D { background: #24120f; border-color: #5c2c1f; color: #e8b09f; }
-  #floor { width: 100%; height: 100%; display: block; cursor: grab; }
+  .block.veto { border-style: double; border-width: 3px; }
+  #floor { width: 100%; height: 100%; min-width: 0; min-height: 0; display: block; cursor: grab; }
   #floor:active { cursor: grabbing; }
-  #side { border-left: 1px solid var(--edge); background: var(--panel); display: flex; flex-direction: column; }
+  #side { border-left: 1px solid var(--edge); background: var(--panel); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
   #log { flex: 1; overflow-y: auto; padding: 8px 10px; }
   #log div { margin: 3px 0; line-height: 1.45; }
   #log .g { color: var(--ink); } #log .d { color: #e8b09f; } #log .n { color: var(--dim); }
@@ -47,6 +48,7 @@
   <div id="side"><div id="log"></div></div>
   <div id="stripwrap"><div id="strip"></div></div>
 </div>
+<script>window.onerror=function(m,s,l,c){document.title='ERR: '+m+' @'+l+':'+c;};</script>
 <script src="graph.js"></script>
 <script src="engine.js"></script>
 <script src="app.js"></script>
