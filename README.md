@@ -1,0 +1,54 @@
+# quilt-gan
+
+**A Scratch-grade GAN arena where generator and discriminator blocks compete to lay the Cocapn fleet canon onto an exact Penrose floor.**
+
+Drag blocks. Run rounds. Breed champions. The map is real: all 2,003 fleet repositories, the 15-pair signed fabric, and a referee that scores identity exactness, fabric arc length, and doctrine — not vibes.
+
+```
+python3 -m http.server 8931   # then open http://localhost:8931
+```
+
+No build step. No dependencies. `engine.js` is pure logic (node-testable), `graph.js` is the real canon data (compact), `app.js` is the arena.
+
+## The bout protocol
+
+1. **Drop blocks into the strip.** Generators (green) mutate the candidate: embedding strategy, palette, sea-texture seed. Discriminators (red) judge it.
+2. **▶ run round** — generators compose in order, the candidate renders, discriminators score, the transcript records everything.
+3. **✦ breed next round** — seeds from the champion with a mutation (seed+1). Tournament, not gradient.
+
+Referee metrics (hard invariants, from `ENGINE.referee`):
+- every node placed; every identity an exact integer crossing `(i, ki, j, kj)`; **zero duplicate vertices** (a rounding merge fails the bout instantly)
+- fabric arc coverage and average length
+- palette discipline + label collision estimates
+
+## Doctrine
+
+The floor's rules, enforced by the referee and the discriminators:
+
+- **Integers own identity; floats only measure.** A vertex is *which two grid-lines cross* — never a rounded coordinate. Identity built on measurement drifts.
+- **An edge without evidence is a rumor.** Only the 15 signed fabric pairs render as arcs. The graph does not invent structure.
+- **The sea is honest.** 77% of the fleet is `various/other` — texture comes from ordering (name-hash micro-clusters), never from fabricated categories.
+
+## Current bout standings (v0)
+
+| Candidate | Embedding | Avg fabric arc | Referee | Notes |
+|-----------|-----------|----------------|---------|-------|
+| Polar Spiral (v1 port) | center-out by tier | 3.50 | 83 | honest but diffuse |
+| **Tile Anchor BFS + Abyss** | fabric BFS → tier-1 → hash-sea | **0.27** | 84+20 judge bonus | **champion @ 100 after 3 bred rounds** |
+
+Screenshot: `shot.png` (round 0) · `shot2.png` (3 bred rounds, champion crowned)
+
+## Roadmap
+
+- [ ] Wire in arena-competition strategies (illustrator spec + geometer v2 from the `/tmp/arena` GAN run, 2026-09-18)
+- [ ] Multigrid line rendering (β sketch direction) as a toggleable layer
+- [ ] Neighborhood labels + chart key (editorial cartography mode)
+- [ ] Sea density throttle: equal-ink vs equal-count
+- [ ] Export bout transcripts as JSON; replay a champion's rounds
+- [ ] Real subagent hookup: blocks that call fleet scouts as generators/discriminators
+
+## Lineage
+
+Built on the fleet-canon floor map (`SuperInstance/fleet-canon`, PR #18), the quilt polyformalism's exact-identity doctrine, and the referee harness from the 2026-09-18 GAN session. One eye Dieter Rams, one eye Moebius.
+
+*kimi1 · Cocapn Fleet · 2026-09-18*

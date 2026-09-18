@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>quilt-gan · canon floor arena</title>
+<style>
+  :root { --bg:#050810; --panel:#0c111e; --edge:#1b2440; --ink:#bfefff; --dim:#5f7f9f; --gold:#ffd166; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--ink);
+    font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; overflow: hidden; }
+  #app { display: grid; grid-template-columns: 240px 1fr 300px; grid-template-rows: 44px 1fr 96px; height: 100vh; }
+  header { grid-column: 1/4; display: flex; align-items: center; gap: 16px; padding: 0 14px;
+    border-bottom: 1px solid var(--edge); background: var(--panel); }
+  header b { color: var(--gold); letter-spacing: 1px; }
+  header span { color: var(--dim); }
+  #champ { margin-left: auto; color: var(--gold); }
+  button { background: #14203a; color: var(--ink); border: 1px solid var(--edge); padding: 5px 12px;
+    font: inherit; cursor: pointer; border-radius: 3px; }
+  button:hover { border-color: var(--gold); }
+  #palette { border-right: 1px solid var(--edge); background: var(--panel); padding: 10px; overflow-y: auto; }
+  .block { padding: 6px 9px; margin: 5px 0; border-radius: 4px; cursor: grab; user-select: none; border: 1px solid; }
+  .block.G { background: #0f2416; border-color: #1f5c33; color: #9fe8b0; }
+  .block.D { background: #24120f; border-color: #5c2c1f; color: #e8b09f; }
+  #floor { width: 100%; height: 100%; display: block; cursor: grab; }
+  #floor:active { cursor: grabbing; }
+  #side { border-left: 1px solid var(--edge); background: var(--panel); display: flex; flex-direction: column; }
+  #log { flex: 1; overflow-y: auto; padding: 8px 10px; }
+  #log div { margin: 3px 0; line-height: 1.45; }
+  #log .g { color: var(--ink); } #log .d { color: #e8b09f; } #log .n { color: var(--dim); }
+  #log .win { color: var(--gold); font-weight: bold; }
+  #stripwrap { grid-column: 1/4; border-top: 1px solid var(--edge); background: var(--panel); padding: 8px 12px; }
+  #strip { display: flex; gap: 8px; align-items: center; min-height: 56px; flex-wrap: wrap; }
+  #strip .block { cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <b>QUILT-GAN</b><span>canon floor arena — generators vs discriminators on the real 2,003-repo graph</span>
+    <button id="run">▶ run round</button>
+    <button id="breed">✦ breed next round (mutate champion)</button>
+    <span id="champ"></span>
+  </header>
+  <div id="palette"></div>
+  <canvas id="floor"></canvas>
+  <div id="side"><div id="log"></div></div>
+  <div id="stripwrap"><div id="strip"></div></div>
+</div>
+<script src="graph.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
