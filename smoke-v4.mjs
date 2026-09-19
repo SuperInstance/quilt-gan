@@ -61,3 +61,16 @@ assert.equal(veto.pass, true, 'default scope (⊤) still passes');
 if (v3.score !== v4.score && v4.communication !== v3.communication) {
   console.log(`scores differ: communication ${v3.communication} → ${v4.communication} — the truth costs points, as it must`);
 }
+
+// the FIRST CROSSING: a hosted ℚ¹⁶ trajectory rides along as provenance.
+// The referee must disclose it and the score must NOT move (zero impact law).
+const prov = { name: 'arena-config', states: 3 };
+const v6 = E.referee(placed, NODES, FABRIC, E.PALETTES.abyss, {
+  arcMetric: (a, b) => arcOf.get(a + '→' + b).length,
+  fabricVeto: veto,
+  fabricProvenance: prov,
+});
+const provNote = v6.notes.find(n => /provenance/.test(n));
+assert.ok(provNote && /never identity/.test(provNote) && /ZERO score impact/.test(provNote), 'provenance disclosed with the law in the note');
+assert.equal(v6.score, v4.score, 'the crossing moves zero points — provenance is not a scoring term');
+console.log(`crossing: trajectory provenance rides along — score ${v4.score} → ${v6.score} (identical, as the law demands)`);

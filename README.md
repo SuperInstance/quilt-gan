@@ -73,3 +73,13 @@ scope by policy`. The smoke runs a DEMO POLICY (short chord<1 arcs judged,
 long scoped out) to prove the note discloses scope and that scoped passing
 does not move the score. Scoped κ_max is computed over the scope only —
 never let a mask widen what the judge claims to have certified.
+
+### the first crossing — ℚ¹⁶ trajectories ride along as provenance
+Every round, the arena appends its own config (strategy, palette, seed,
+cohesion, score) as an exact ℚ¹⁶ state to `state.traj` — the breed record
+of the arena itself. The referee discloses it:
+`provenance: ℚ¹⁶ breed trajectory 'arena-config' — N state(s) hosted
+alongside the arena (views, never identity; ZERO score impact)`. The law
+is structural: **no scoring term may ever read state.traj.** The smoke
+asserts score-with === score-without. Crossing the systems changes the
+record, never the points.

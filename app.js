@@ -10,7 +10,7 @@ import { makeRat, ratToNumber } from './commensurate.mjs';
   const R = 9;
   const state = {
     placed: [], palette: E.PALETTES.abyss, strategy: 'sextant', seed: 0,
-    champion: null, round: 0, zoom: 15, tx: 0, ty: 0, ghosts: [],
+    champion: null, round: 0, zoom: 15, tx: 0, ty: 0, ghosts: [], traj: [],
   };
 
   // v4 fabric grammar — the arcs v3 drew by hand and scored as chords are now
@@ -40,7 +40,8 @@ import { makeRat, ratToNumber } from './commensurate.mjs';
       veto.kappaMax = veto.scoped.reduce((m, r) => Math.max(m, r.kappaMax), 0);
       veto.pass = veto.scoped.every(r => r.pass);
     }
-    return { layout, metrics: fabricMetrics(layout), veto };
+    return { layout, metrics: fabricMetrics(layout), veto,
+      provenance: state.traj.length ? { name: 'arena-config', states: state.traj.length } : null };
   }
 
   const BLOCKS = [
@@ -312,7 +313,23 @@ import { makeRat, ratToNumber } from './commensurate.mjs';
     const verdict = E.referee(state.placed, NODES, FABRIC, s.palette, {
       arcMetric: (a, b) => arcOfR.get(a + '→' + b).length, // TRUE arc length, not chord
       fabricVeto: g.veto,
+      fabricProvenance: g.provenance,
     });
+    // the FIRST CROSSING: every round appends the arena's own config as a
+    // ℚ¹⁶ state (dial 0 strategy, 1 palette, 2 seed, 3 cohesion, 4 score,
+    // rest zero) — the breed record of the arena itself, lifted exactly.
+    // Provenance only: no scoring term may ever read state.traj.
+    {
+      const strats = ['polar', 'sextant', 'anchor'];
+      const pals = Object.keys(E.PALETTES);
+      const dial = new Array(16).fill(0).map(() => ({ num: 0n, den: 1n }));
+        dial[0] = { num: BigInt(Math.max(0, strats.indexOf(state.strategy))), den: 1n };
+        dial[1] = { num: BigInt(Math.max(0, pals.indexOf(pals.find(k => E.PALETTES[k] === state.palette))), den: 1n };
+        dial[2] = { num: BigInt(state.seed % 32768), den: 1n };
+        dial[3] = { num: BigInt(Math.round((verdict.cohesion?.ratio ?? 0) * 32768)), den: 32768n };
+        dial[4] = { num: BigInt(verdict.score), den: 1n };
+      (state.traj = state.traj || []).push(dial);
+    }
     let score = verdict.score;
     let vetoes = 0;
     dBlocks.forEach(b => {
