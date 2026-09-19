@@ -1,4 +1,10 @@
-/* quilt-gan arena UI v3 — descent layers, β grammar, kill-veto discriminators. */
+/* quilt-gan arena UI v4 — the fabric grammar: exact rational arcs, TRUE
+   arc-length metric, Δ_max curvature kill-veto. Vendored from quilt-floor
+   (IARS spline.mjs + commensurate.mjs + fabric.mjs, byte-identical). */
+import { fabricLayout, fabricMetrics, killVeto } from './fabric.mjs';
+import { sampleAlong, evalSpline, evalDeriv } from './spline.mjs';
+import { makeRat, ratToNumber } from './commensurate.mjs';
+
 (function () {
   const E = window.ENGINE;
   const R = 9;
@@ -6,6 +12,22 @@
     placed: [], palette: E.PALETTES.abyss, strategy: 'sextant', seed: 0,
     champion: null, round: 0, zoom: 15, tx: 0, ty: 0, ghosts: [],
   };
+
+  // v4 fabric grammar — the arcs v3 drew by hand and scored as chords are now
+  // exact IARS splines with a true length and a curvature kill-veto. The side
+  // law is v3's (±0.16 antiparallel hash); positions are float measurements.
+  // Δ_max policy: the v3 bow law measures κ ≤ 6.8 on the real fabric (smoke-v4);
+  // Δ_max = 8 admits the current law and kills hairpins ≥ ~12% tighter. The
+  // honest long-term fix is a chord-proportional bow (side ~ 0.1·chord), which
+  // the grammar supports via sideFor — a v5 law, not a v4 smuggled change.
+  const DELTA_MAX = 8.0;
+  const sideFor = ([a, b]) => (E.hash(a + b) % 2 ? 1 : -1) * 0.16;
+  function grammar() {
+    const pos = {};
+    state.placed.forEach(p => { pos[NODES[p.ref].n] = p.v; });
+    const layout = fabricLayout(state.fabricResolved, pos, { sideFor });
+    return { layout, metrics: fabricMetrics(layout), veto: killVeto(layout, { deltaMax: DELTA_MAX }) };
+  }
 
   const BLOCKS = [
     { id: 'g-sextant', kind: 'G', label: 'Embed · SEXTANT (Voronoi+Contract)', apply: s => ({ ...s, strategy: 'sextant' }) },
@@ -105,22 +127,22 @@
     state.fabricResolved.forEach(([a, b]) => { inDegree[b] = (inDegree[b] || 0) + 1; });
 
     // fabric: teal under-glow, gold core, direction chevron at the OWED end (β §3.4)
+    // v4: arcs are exact ℚ splines (grammar), drawn as polylines through the curve
+    const { layout: gLayout } = grammar();
+    const arcOf = new Map(gLayout.map(r => [r.edge[0] + '→' + r.edge[1], r]));
     state.fabricResolved.forEach(([a, b]) => {
       const A = pos[a], B = pos[b];
       if (!A || !B) return;
-      const mx = (A.x + B.x) / 2, my = (A.y + A.y) / 2 + (B.y - A.y) / 2;
-      const dx = B.x - A.x, dy = B.y - A.y;
-      const side = (E.hash(a + b) % 2 ? 1 : -1) * 0.16; // antiparallel bow-apart hashing
-      const cx = mx - dy * side, cy = my + dx * side;
+      const row = arcOf.get(a + '→' + b);
+      const pts = sampleAlong(row.curve, 16).map(p => p.map(ratToNumber));
       ctx.strokeStyle = P.fabricGlow; ctx.globalAlpha = 0.15; ctx.lineWidth = 6 / state.zoom;
-      ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.quadraticCurveTo(cx, cy, B.x, B.y); ctx.stroke();
+      ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]))); ctx.stroke();
       ctx.strokeStyle = P.fabricCore; ctx.globalAlpha = 0.95; ctx.lineWidth = 1.8 / state.zoom;
-      ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.quadraticCurveTo(cx, cy, B.x, B.y); ctx.stroke();
+      ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]))); ctx.stroke();
       ctx.globalAlpha = 1;
-      if (layer >= 2) { // chevron at owed end, tangent to the curve
-        const t = 0.92, qx = (1 - t) * (1 - t) * A.x + 2 * (1 - t) * t * cx + t * t * B.x;
-        const qy = (1 - t) * (1 - t) * A.y + 2 * (1 - t) * t * cy + t * t * B.y;
-        const ang = Math.atan2(B.y - qy, B.x - qx);
+      if (layer >= 2) { // chevron at owed end, tangent to the curve — exact derivative
+        const tan = evalDeriv(row.curve, makeRat(23n, 25n), 1).map(ratToNumber);
+        const ang = Math.atan2(tan[1], tan[0]);
         const sz = 4.5 / state.zoom;
         ctx.fillStyle = P.fabricCore;
         ctx.beginPath();
@@ -271,7 +293,12 @@
     state.fabricResolved = res.edges; state.ghosts = res.ghosts;
     state.fabricNames = new Set(res.edges.flat());
     draw();
-    const verdict = E.referee(state.placed, NODES, FABRIC, s.palette);
+    const g = grammar();
+    const arcOfR = new Map(g.layout.map(r => [r.edge[0] + '→' + r.edge[1], r]));
+    const verdict = E.referee(state.placed, NODES, FABRIC, s.palette, {
+      arcMetric: (a, b) => arcOfR.get(a + '→' + b).length, // TRUE arc length, not chord
+      fabricVeto: g.veto,
+    });
     let score = verdict.score;
     let vetoes = 0;
     dBlocks.forEach(b => {

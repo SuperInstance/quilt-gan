@@ -47,6 +47,13 @@ Screenshot: `shot.png` (round 0) · `shot2.png` (3 bred rounds, champion crowned
 - [ ] Export bout transcripts as JSON; replay a champion's rounds
 - [ ] Real subagent hookup: blocks that call fleet scouts as generators/discriminators
 
+## v4 — the fabric grammar (2026-09-19)
+
+v3 drew arcs by hand (a floated quadratic, ±0.16 absolute bow) and scored them as chords. v4 vendors the quilt-floor grammar byte-identical (`commensurate.mjs`, `spline.mjs`, `fabric.mjs`) and:
+
+- **engine.referee** takes `extra.arcMetric(a, b, posA, posB)` — the TRUE arc length. Default stays the chord (legacy callers keep v3 numbers; the note discloses). Also takes `extra.fabricVeto = {pass, kappaMax, deltaMax}` — a Δ_max curvature kill-veto that zeroes communication on fabrication defects.
+- **app.js** is now a module: arcs are exact ℚ IARS splines drawn as polylines (chevron tangent from the exact derivative), the referee is fed the true metric + veto, and the round log prints both. Headless smoke: `node smoke-v4.mjs` — on the real 2,003-repo canon: chord avg 1.6458 vs TRUE 1.6734 (**1.68% hidden cost**), κ_max 6.75 on chord-0.09 hairpins (v3's fixed bow on near-coincident placements; Δ_max = 8 admits the current law, a chord-proportional bow is the v5 fix).
+
 ## Lineage
 
 Built on the fleet-canon floor map (`SuperInstance/fleet-canon`, PR #18), the quilt polyformalism's exact-identity doctrine, and the referee harness from the 2026-09-18 GAN session. One eye Dieter Rams, one eye Moebius.

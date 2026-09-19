@@ -398,18 +398,38 @@
     if (!noCollide) issues.push(`vertex collision: ${placed.length - idents.size} (rounding merge)`);
     const integrity = completeness + (integ ? 20 : 0) + (noCollide ? 15 : 0);
     // communication (40)
+    // v4: extra.arcMetric(a, b, posA, posB) injects the TRUE arc length
+    // (quilt-floor fabric grammar). Default is the CHORD — v3's metric, kept
+    // only so legacy callers keep their numbers; the renderer injects truth.
+    // extra.fabricVeto = {pass, kappaMax, deltaMax} is the Δ_max curvature
+    // kill-veto: a fabrication defect zeroes communication.
     const pos = {}; placed.forEach(p => pos[nodes[p.ref].n] = p.v);
-    let arcSum = 0;
-    edges.forEach(([a, b]) => { arcSum += Math.hypot(pos[a].x - pos[b].x, pos[a].y - pos[b].y); });
+    let arcSum = 0, chordSum = 0;
+    edges.forEach(([a, b]) => {
+      const d = Math.hypot(pos[a].x - pos[b].x, pos[a].y - pos[b].y);
+      chordSum += d;
+      arcSum += extra.arcMetric ? extra.arcMetric(a, b, pos[a], pos[b]) : d;
+    });
     const avgArc = edges.length ? arcSum / edges.length : 0;
+    const avgChord = edges.length ? chordSum / edges.length : 0;
+    const arcDeltaPct = chordSum > 0 ? 100 * (arcSum - chordSum) / chordSum : 0;
     const arcScore = Math.round(Math.max(0, 15 - avgArc * 12));
     const co = cohesion(placed, nodes);
     const cohScore = co.ratio < 0.5 ? 15 : co.ratio < 0.7 ? 10 : co.ratio < 0.9 ? 5 : 0;
-    const comm = arcScore + cohScore + (extra.keyDisclosed === false ? 0 : 10);
+    let comm = arcScore + cohScore + (extra.keyDisclosed === false ? 0 : 10);
+    if (extra.arcMetric) notes.push(`arc metric: TRUE arc length (chord avg ${avgChord.toFixed(2)} hid ${arcDeltaPct.toFixed(1)}% of the fabric cost)`);
+    if (extra.fabricVeto) {
+      if (!extra.fabricVeto.pass) {
+        comm = 0;
+        notes.push(`KILL-VETO: arc curvature κ_max = ${extra.fabricVeto.kappaMax.toFixed(2)} > Δ_max = ${extra.fabricVeto.deltaMax} — fabrication defect, communication zeroed`);
+      } else {
+        notes.push(`arc judge: κ_max = ${extra.fabricVeto.kappaMax.toFixed(4)} ≤ Δ_max = ${extra.fabricVeto.deltaMax}`);
+      }
+    }
     notes.push(`fabric: ${edges.length} arcs (${ghosts.length} ghosts: ${ghosts.map(g => g[0] + '→' + g[1]).join(', ') || 'none'}) avg ${avgArc.toFixed(2)}`);
     notes.push(`cohesion ratio ${co.ratio.toFixed(2)} (β selfcheck-1 target <0.5) → +${cohScore}`);
     if (ghosts.length) notes.push('ghost edges: pending catalog completeness (PR #19) — doctrine: reported, never half-scored');
-    return { score: Math.min(integrity + comm, 100), integrity, communication: comm, avgArc, drawn: edges.length, ghostCount: ghosts.length, ghosts, cohesion: co, issues, notes };
+    return { score: Math.min(integrity + comm, 100), integrity, communication: comm, avgArc, avgChord, arcDeltaPct, drawn: edges.length, ghostCount: ghosts.length, ghosts, cohesion: co, issues, notes };
   }
 
   /* ---------- kill-veto metrics for D-blocks (δ order #6) ---------- */
