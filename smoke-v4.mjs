@@ -2,6 +2,7 @@
 // engine, real fabric grammar. Prints the v3-vs-v4 delta: what the chord
 // metric hid, what the κ judge sees, and that a round still scores.
 import { createRequire } from 'node:module';
+import assert from 'node:assert/strict';
 const require = createRequire('/tmp/quilt-gan/');
 const { NODES, FABRIC } = require('/tmp/quilt-gan/graph.js');
 const E = require('/tmp/quilt-gan/engine.js');
@@ -37,6 +38,26 @@ const tightest = [...veto.perArc].sort((x, y) => y.kappaMax - x.kappaMax).slice(
 for (const t of tightest) console.log(`  tightest: ${t.edge[0]}→${t.edge[1]} κ=${t.kappaMax.toFixed(2)} (chord ${arcOf.get(t.edge.join('→')).chord.toFixed(2)})`);
 console.log(`v5: score = ${v4.score} (chord-metric ${v3.score})`);
 for (const n of v4.notes) console.log('  ·', n);
+
+// mask-scoped judging (the floor's mask.mjs seam): DEMO POLICY — short arcs
+// (chord < 1, the hairpin class) judged dense, long arcs scoped out. The
+// note must disclose the scope; the scoped κ_max must cover its scope only.
+const shortMask = { has: (a, b) => (arcOf.get(a + '→' + b)?.chord ?? 9) < 1.0, name: 'chord<1' };
+const scopedVeto = { ...veto };
+scopedVeto.scoped = veto.perArc.filter(r => shortMask.has(...r.edge));
+scopedVeto.scopedOut = veto.perArc.length - scopedVeto.scoped.length;
+scopedVeto.kappaMax = scopedVeto.scoped.reduce((m, r) => Math.max(m, r.kappaMax), 0);
+scopedVeto.pass = scopedVeto.scoped.every(r => r.pass);
+const v5 = E.referee(placed, NODES, FABRIC, E.PALETTES.abyss, {
+  arcMetric: (a, b) => arcOf.get(a + '→' + b).length,
+  fabricVeto: scopedVeto,
+});
+const scopeNote = v5.notes.find(n => /MASK-SCOPED/.test(n));
+console.log(`mask: judged ${scopedVeto.scoped.length}/${veto.perArc.length} arcs (policy chord<1) → κ_max(scope) = ${scopedVeto.kappaMax.toFixed(4)}`);
+console.log('  ·', scopeNote);
+assert.ok(scopeNote && scopeNote.includes(`${scopedVeto.scopedOut} out of scope`), 'the judge discloses its scope');
+assert.equal(v5.score, v4.score, 'scoped judging does not change the score when the scope passes');
+assert.equal(veto.pass, true, 'default scope (⊤) still passes');
 if (v3.score !== v4.score && v4.communication !== v3.communication) {
   console.log(`scores differ: communication ${v3.communication} → ${v4.communication} — the truth costs points, as it must`);
 }

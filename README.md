@@ -63,3 +63,13 @@ v3 drew arcs by hand (a floated quadratic, ±0.16 absolute bow) and scored them 
 Built on the fleet-canon floor map (`SuperInstance/fleet-canon`, PR #18), the quilt polyformalism's exact-identity doctrine, and the referee harness from the 2026-09-18 GAN session. One eye Dieter Rams, one eye Moebius.
 
 *kimi1 · Cocapn Fleet · 2026-09-18*
+
+### judge-scope mask (the floor's mask.mjs seam)
+The kill-veto's default scope is ⊤ — v5's law pins κ = 4·ratio
+theoretically on every arc, so every arc is judged. The mask seam exists
+for human carve-outs: pass a `{has(a,b)}` mask via `state.judgeMask` and
+the referee prints `arc judge: MASK-SCOPED — n/m arcs judged, k out of
+scope by policy`. The smoke runs a DEMO POLICY (short chord<1 arcs judged,
+long scoped out) to prove the note discloses scope and that scoped passing
+does not move the score. Scoped κ_max is computed over the scope only —
+never let a mask widen what the judge claims to have certified.

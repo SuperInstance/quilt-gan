@@ -419,6 +419,9 @@
     let comm = arcScore + cohScore + (extra.keyDisclosed === false ? 0 : 10);
     if (extra.arcMetric) notes.push(`arc metric: TRUE arc length (chord avg ${avgChord.toFixed(2)} hid ${arcDeltaPct.toFixed(1)}% of the fabric cost)`);
     if (extra.fabricVeto) {
+      if (extra.fabricVeto.scopedOut != null) {
+        notes.push(`arc judge: MASK-SCOPED — ${extra.fabricVeto.scoped.length}/${extra.fabricVeto.scoped.length + extra.fabricVeto.scopedOut} arcs judged (κ_max over scope = ${extra.fabricVeto.kappaMax.toFixed(4)}), ${extra.fabricVeto.scopedOut} out of scope by policy`);
+      }
       if (!extra.fabricVeto.pass) {
         comm = 0;
         notes.push(`KILL-VETO: arc curvature κ_max = ${extra.fabricVeto.kappaMax.toFixed(2)} > Δ_max = ${extra.fabricVeto.deltaMax} — fabrication defect, communication zeroed`);

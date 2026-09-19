@@ -26,7 +26,21 @@ import { makeRat, ratToNumber } from './commensurate.mjs';
     const pos = {};
     state.placed.forEach(p => { pos[NODES[p.ref].n] = p.v; });
     const layout = fabricLayout(state.fabricResolved, pos, { sideFor });
-    return { layout, metrics: fabricMetrics(layout), veto: killVeto(layout, { deltaMax: DELTA_MAX }) };
+    const veto = killVeto(layout, { deltaMax: DELTA_MAX });
+    // Judge-scope mask (quilt-floor mask.mjs semantics): the v5 law pins
+    // κ = 4·ratio THEORETICALLY on every arc, so the kill-veto's default
+    // scope is ⊤ (all arcs). The mask seam exists for human carve-outs —
+    // DEMO POLICY here: short arcs (chord < 1, the hairpin class the v3
+    // kink actually hurt) judged dense, long arcs scoped out. Default
+    // callers pass no mask → every arc judged (behavior unchanged).
+    const mask = state.judgeMask || null;
+    if (mask) {
+      veto.scoped = veto.perArc.filter(r => mask.has(r.edge[0], r.edge[1]));
+      veto.scopedOut = veto.perArc.length - veto.scoped.length;
+      veto.kappaMax = veto.scoped.reduce((m, r) => Math.max(m, r.kappaMax), 0);
+      veto.pass = veto.scoped.every(r => r.pass);
+    }
+    return { layout, metrics: fabricMetrics(layout), veto };
   }
 
   const BLOCKS = [
