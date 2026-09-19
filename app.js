@@ -1,7 +1,7 @@
 /* quilt-gan arena UI v4 — the fabric grammar: exact rational arcs, TRUE
    arc-length metric, Δ_max curvature kill-veto. Vendored from quilt-floor
    (IARS spline.mjs + commensurate.mjs + fabric.mjs, byte-identical). */
-import { fabricLayout, fabricMetrics, killVeto } from './fabric.mjs';
+import { fabricLayout, fabricMetrics, killVeto, proportionalSide } from './fabric.mjs';
 import { sampleAlong, evalSpline, evalDeriv } from './spline.mjs';
 import { makeRat, ratToNumber } from './commensurate.mjs';
 
@@ -16,12 +16,12 @@ import { makeRat, ratToNumber } from './commensurate.mjs';
   // v4 fabric grammar — the arcs v3 drew by hand and scored as chords are now
   // exact IARS splines with a true length and a curvature kill-veto. The side
   // law is v3's (±0.16 antiparallel hash); positions are float measurements.
-  // Δ_max policy: the v3 bow law measures κ ≤ 6.8 on the real fabric (smoke-v4);
-  // Δ_max = 8 admits the current law and kills hairpins ≥ ~12% tighter. The
-  // honest long-term fix is a chord-proportional bow (side ~ 0.1·chord), which
-  // the grammar supports via sideFor — a v5 law, not a v4 smuggled change.
-  const DELTA_MAX = 8.0;
-  const sideFor = ([a, b]) => (E.hash(a + b) % 2 ? 1 : -1) * 0.16;
+  // v5 law: chord-proportional bow — κ ≈ 4·ratio on EVERY arc, from the
+  // longest to the near-coincident (exact theory, floor fabric v5). The v3
+  // fixed ±0.16 bow kinked to κ=6.75 on chord-0.09 arcs; this cannot.
+  const RATIO = 0.1;
+  const DELTA_MAX = 4 * RATIO * 2; // judge = 2× the theoretical bound: admits the law, kills fabrication
+  const sideFor = proportionalSide(RATIO, ([a, b]) => (E.hash(a + b) % 2 ? 1 : -1));
   function grammar() {
     const pos = {};
     state.placed.forEach(p => { pos[NODES[p.ref].n] = p.v; });

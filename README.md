@@ -47,6 +47,10 @@ Screenshot: `shot.png` (round 0) · `shot2.png` (3 bred rounds, champion crowned
 - [ ] Export bout transcripts as JSON; replay a champion's rounds
 - [ ] Real subagent hookup: blocks that call fleet scouts as generators/discriminators
 
+## v5 — the proportional bow (2026-09-19)
+
+v4 kept v3's fixed ±0.16 bow for shape compatibility; smoke-v4 exposed its sin: curvature κ ≈ 1.28/c is unbounded on short chords (κ=6.75 on the chord-0.09 quilt-canvas-demo arcs). v5 switches to the floor's `proportionalSide(0.1)`: sagitta = 0.1·c², so **κ = 4·ratio = 0.40 exactly on every arc** — hairpins die by construction, and the Δ_max judge (0.8 = 2× the theoretical bound) polices fabrication only. Cost of the truth: the chord metric now hides **7.58%** of the fabric cost (avgChord 1.6458 vs true 1.7706) — the proportional bow prices long arcs honestly. Same score, honest books.
+
 ## v4 — the fabric grammar (2026-09-19)
 
 v3 drew arcs by hand (a floated quadratic, ±0.16 absolute bow) and scored them as chords. v4 vendors the quilt-floor grammar byte-identical (`commensurate.mjs`, `spline.mjs`, `fabric.mjs`) and:

@@ -23,8 +23,14 @@ const ZERO = makeRat(0n);
 const lift = p => [floatToRat(p.x), floatToRat(p.y)];
 
 // fabricArc(A, B, {side}) — the exact arc the v3 renderer drew by hand.
-// side is ABSOLUTE (v3 law: ±0.16 from the antiparallel hash), bowing the
-// control point to chord-mid + perpendicular·side. All ℚ after the lift.
+// side is ABSOLUTE: ctrl = chord-mid + perpendicular·side, and since the
+// perpendicular vector has magnitude |chord|, the sagitta is side·c.
+//   • v3 law: side = ±0.16 const ⇒ sagitta = 0.16c ⇒ κ ≈ 1.28/c — the
+//     hairpins of smoke-v4 (κ=6.75 on chord-0.09 arcs).
+//   • v5 law (proportionalSide): side = ratio·c ⇒ sagitta = ratio·c² ⇒
+//     κ ≈ 8·ratio — BOUNDED independent of chord. The bow costs what it
+//     costs, never more than the judge allows.
+// All ℚ after the lift.
 export function fabricArc(A, B, { side = 0.16 } = {}) {
   const a = lift(A), b = lift(B);
   const mid = [ratDiv(ratAdd(a[0], b[0]), makeRat(2n)), ratDiv(ratAdd(a[1], b[1]), makeRat(2n))];
@@ -40,12 +46,22 @@ export function fabricArc(A, B, { side = 0.16 } = {}) {
   return { curve, ctrl, chord, a, b };
 }
 
-// fabricLayout(edges, pos, {sideFor}) — one arc per resolved edge, with the
-// true length and the chord side by side. sideFor(edge) returns the signed
-// side (v3 default: the ±0.16 antiparallel hash).
-export function fabricLayout(edges, pos, { sideFor = () => 0.16 } = {}) {
+// proportionalSide(ratio, signFn) — the v5 sideFor factory: absolute side =
+// ratio·chord·sign(edge). κ ≈ 8·ratio for every arc, from the longest to
+// the near-coincident; the Δ_max kill-veto becomes a law, not a rescue.
+export function proportionalSide(ratio, signFn = () => 1) {
+  return (edge, chord) => ratio * chord * signFn(edge);
+}
+
+// fabricLayout(edges, pos, {sideFor | sideRatio}) — one arc per resolved
+// edge, with the true length and the chord side by side. sideFor(edge,
+// chord) returns the signed ABSOLUTE side (v3 default: the ±0.16
+// antiparallel hash); sideRatio sets the v5 proportional law directly.
+export function fabricLayout(edges, pos, { sideFor = null, sideRatio = null } = {}) {
+  const sideOf = sideFor ?? (sideRatio !== null ? proportionalSide(sideRatio) : () => 0.16);
   return edges.map(([a, b]) => {
-    const arc = fabricArc(pos[a], pos[b], { side: sideFor([a, b]) });
+    const A = pos[a], B = pos[b];
+    const arc = fabricArc(A, B, { side: sideOf([a, b], Math.hypot(B.x - A.x, B.y - A.y)) });
     return {
       edge: [a, b],
       curve: arc.curve,
