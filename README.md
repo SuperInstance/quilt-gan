@@ -83,3 +83,26 @@ alongside the arena (views, never identity; ZERO score impact)`. The law
 is structural: **no scoring term may ever read state.traj.** The smoke
 asserts score-with === score-without. Crossing the systems changes the
 record, never the points.
+
+### reading the crossing's shape — `gesture.mjs`
+The breed record is provenance, but provenance has a *shape*: over a run the
+arena traces a path through config-space, and that path has geometry a single
+round cannot show. [`gesture.mjs`](gesture.mjs) reads it, order by order —
+`arcLength` (how far the breeding travelled), `bendingEnergy` (curvature: a run
+oscillating between two strategies), and `twistEnergy` (torsion: a run genuinely
+opening new config dimensions rather than pacing one) — with `planarity` the
+scale-free inverse. It reads the *semantic* dials (strategy, palette, cohesion,
+score), min-max normalized so no dial dominates; the seed dial is excluded as
+per-round entropy.
+
+This is the SuperInstance fleet's shared "abstraction as gesture" reading — the
+same three orders that read notes (musician-soul), rooms (elephant),
+conversations (tensor-midi), cells (quilt) and federated convergence
+(federated-tinyml-vessel); *the property is in the twist*
+([twist-engine](https://github.com/SuperInstance/twist-engine)). Crucially it
+**obeys the law**: `gesture.mjs` is pure, read-only analysis — it never mutates
+`state.traj`, and it is *not a scoring term* (never imported by `engine.js` or the
+referee). `breedGestureNote(state.traj)` yields a one-line disclosure for the
+round log, alongside the provenance note. Headless: `node smoke-gesture.mjs`
+(includes an assertion that reading the gesture leaves the breed record
+untouched).
