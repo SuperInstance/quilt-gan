@@ -47,6 +47,21 @@ export function dialVector(dial, dims = SEMANTIC_DIALS) {
   return dims.map((i) => toFloat(dial[i]));
 }
 
+/**
+ * A breed trajectory → the plain-number point array its geometry is read from:
+ * one vector per round over the chosen dials, per-column min-max normalized by
+ * default so no single dial dominates the shape. This is the exact same point
+ * cloud `breedGesture` measures and the same one you should hand a `<gesture-hull>`
+ * widget, so the drawn shape and the reported numbers never disagree.
+ */
+export function breedPoints(traj, opts = {}) {
+  const dims = opts.dims || SEMANTIC_DIALS;
+  const doNorm = opts.normalize !== false;
+  const list = Array.isArray(traj) ? traj : [];
+  const points = list.map((dial) => dialVector(dial, dims));
+  return doNorm ? normalizeColumns(points) : points;
+}
+
 // Per-column min-max normalization to [0,1] so no single dial dominates the
 // geometry (a constant column maps to 0). This is what makes score (~tens) and
 // cohesion (0..1) comparable directions rather than score drowning cohesion.
@@ -162,8 +177,7 @@ export function breedGesture(traj, opts = {}) {
   const dims = opts.dims || SEMANTIC_DIALS;
   const doNorm = opts.normalize !== false;
   const list = Array.isArray(traj) ? traj : [];
-  let points = list.map((dial) => dialVector(dial, dims));
-  if (doNorm) points = normalizeColumns(points);
+  const points = breedPoints(traj, { dims, normalize: doNorm });
   return {
     rounds: list.length,
     arcLength: arcLength(points),
