@@ -4,6 +4,7 @@
 import { fabricLayout, fabricMetrics, killVeto, proportionalSide } from './fabric.mjs';
 import { sampleAlong, evalSpline, evalDeriv } from './spline.mjs';
 import { makeRat, ratToNumber } from './commensurate.mjs';
+import { breedPoints, breedGestureNote } from './gesture.mjs';
 
 (function () {
   const E = window.ENGINE;
@@ -287,6 +288,25 @@ import { makeRat, ratToNumber } from './commensurate.mjs';
   const log = document.getElementById('log');
   const say = (cls, msg) => { const d = document.createElement('div'); d.className = cls; d.textContent = msg; log.prepend(d); };
 
+  // Push the breed trajectory's shape to the embedded <gesture-hull> and log its
+  // one-line reading. Degrades gracefully if the widget script (loaded from the
+  // gesture-kit CDN) hasn't defined the element yet — the shape appears on the
+  // next round. Pure read-out; never feeds back into scoring.
+  function updateBreedGesture() {
+    const el = document.getElementById('breed-gesture');
+    if (el) {
+      try {
+        const pts = breedPoints(state.traj);
+        // If the custom element has upgraded, drive its setter (live re-render);
+        // otherwise set the observed attribute so it renders once the CDN module
+        // defines it — avoids the pre-upgrade property-shadowing trap.
+        if (customElements.get('gesture-hull')) el.points = pts;
+        else el.setAttribute('points', JSON.stringify(pts));
+      } catch { /* widget unavailable — the arena is unaffected */ }
+    }
+    say('n', '~ ' + breedGestureNote(state.traj));
+  }
+
   function place(s) {
     if (s.strategy === 'sextant') return E.embedSextant(NODES, FABRIC, R, { seed: s.seed }).placed;
     if (s.strategy === 'anchor') return E.embedTileAnchor(NODES, FABRIC, R, s.seed);
@@ -324,12 +344,17 @@ import { makeRat, ratToNumber } from './commensurate.mjs';
       const pals = Object.keys(E.PALETTES);
       const dial = new Array(16).fill(0).map(() => ({ num: 0n, den: 1n }));
         dial[0] = { num: BigInt(Math.max(0, strats.indexOf(state.strategy))), den: 1n };
-        dial[1] = { num: BigInt(Math.max(0, pals.indexOf(pals.find(k => E.PALETTES[k] === state.palette))), den: 1n };
+        dial[1] = { num: BigInt(Math.max(0, pals.indexOf(pals.find(k => E.PALETTES[k] === state.palette)))), den: 1n };
         dial[2] = { num: BigInt(state.seed % 32768), den: 1n };
         dial[3] = { num: BigInt(Math.round((verdict.cohesion?.ratio ?? 0) * 32768)), den: 32768n };
         dial[4] = { num: BigInt(verdict.score), den: 1n };
       (state.traj = state.traj || []).push(dial);
     }
+    // Read-only geometry readout: feed the live <gesture-hull> the SAME point
+    // cloud gesture.mjs measures (semantic dials, per-column normalized), so the
+    // drawn shape and the printed numbers can never disagree. Never a scoring term.
+    updateBreedGesture();
+
     let score = verdict.score;
     let vetoes = 0;
     dBlocks.forEach(b => {
@@ -378,26 +403,26 @@ import { makeRat, ratToNumber } from './commensurate.mjs';
     el.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', b.id));
     palette.appendChild(el);
   });
+  // One place builds a strip block (used by the drop handler, the initial fill,
+  // and the autorun demo) — click to remove.
+  function addBlock(id) {
+    const b = BLOCKS.find(x => x.id === id); if (!b) return null;
+    const el = document.createElement('div');
+    el.className = 'block ' + b.kind + (b.veto ? ' veto' : ''); el.dataset.id = id;
+    el.textContent = (b.kind === 'G' ? '⚙ ' : b.veto ? '⛔ ' : '⚖ ') + b.label;
+    el.onclick = () => el.remove();
+    strip.appendChild(el);
+    return b;
+  }
+  const setStrip = ids => { strip.innerHTML = ''; ids.forEach(addBlock); };
+
   strip.addEventListener('dragover', e => e.preventDefault());
   strip.addEventListener('drop', e => {
     e.preventDefault();
-    const id = e.dataTransfer.getData('text/plain');
-    const b = BLOCKS.find(x => x.id === id); if (!b) return;
-    const el = document.createElement('div');
-    el.className = 'block ' + b.kind + (b.veto ? ' veto' : ''); el.dataset.id = id;
-    el.textContent = (b.kind === 'G' ? '⚙ ' : b.veto ? '⛔ ' : '⚖ ') + b.label;
-    el.onclick = () => el.remove();
-    strip.appendChild(el);
-    say('n', `+ ${b.label} (click to remove)`);
+    const b = addBlock(e.dataTransfer.getData('text/plain'));
+    if (b) say('n', `+ ${b.label} (click to remove)`);
   });
-  ['g-sextant', 'p-abyss', 'd-ref', 'd-arc', 'd-cohesion', 'd-doctrine'].forEach(id => {
-    const b = BLOCKS.find(x => x.id === id);
-    const el = document.createElement('div');
-    el.className = 'block ' + b.kind + (b.veto ? ' veto' : ''); el.dataset.id = id;
-    el.textContent = (b.kind === 'G' ? '⚙ ' : b.veto ? '⛔ ' : '⚖ ') + b.label;
-    el.onclick = () => el.remove();
-    strip.appendChild(el);
-  });
+  setStrip(['g-sextant', 'p-abyss', 'd-ref', 'd-arc', 'd-cohesion', 'd-doctrine']);
 
   // init
   const res = E.resolveFabric(FABRIC, NODES);
@@ -407,7 +432,13 @@ import { makeRat, ratToNumber } from './commensurate.mjs';
   resize();
   say('n', 'v3 arena ready — descent layers L0–L3 on zoom · kill-veto D-blocks armed.');
   if (location.search.includes('autorun')) {
-    runRound(false); runRound(true); runRound(true);
+    // A varied canned run so the breed gesture actually traces a shape: four
+    // rounds across different strategies and palettes move the semantic dials,
+    // and the <gesture-hull> reads the arc / bend / twist of that motion.
+    const judges = ['d-ref', 'd-arc', 'd-cohesion', 'd-doctrine'];
+    [['g-sextant', 'p-abyss'], ['g-anchor', 'p-paper'], ['g-polar', 'p-abyss'], ['g-sextant', 'p-paper']]
+      .forEach(gen => { setStrip([...gen, ...judges]); runRound(false); });
+    setStrip(['g-sextant', 'p-abyss', ...judges]);
     state.zoom = 55; draw();
   }
 })();

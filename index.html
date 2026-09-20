@@ -26,6 +26,10 @@
   #floor { width: 100%; height: 100%; min-width: 0; min-height: 0; display: block; cursor: grab; }
   #floor:active { cursor: grabbing; }
   #side { border-left: 1px solid var(--edge); background: var(--panel); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+  #gesturewrap { border-bottom: 1px solid var(--edge); padding: 8px 10px 10px; }
+  #gesturewrap .cap { color: var(--dim); font-size: 11px; margin: 0 0 6px; line-height: 1.4; }
+  #gesturewrap .cap b { color: var(--gold); font-weight: normal; }
+  gesture-hull { --gh-bg: transparent; --gh-plot: #070b14; --gh-fg: var(--ink); }
   #log { flex: 1; overflow-y: auto; padding: 8px 10px; }
   #log div { margin: 3px 0; line-height: 1.45; }
   #log .g { color: var(--ink); } #log .d { color: #e8b09f; } #log .n { color: var(--dim); }
@@ -45,10 +49,17 @@
   </header>
   <div id="palette"></div>
   <canvas id="floor"></canvas>
-  <div id="side"><div id="log"></div></div>
+  <div id="side">
+    <div id="gesturewrap">
+      <p class="cap"><b>breed gesture</b> — the shape of how this run moved through config-space (strategy · palette · cohesion · score), read order by order: arc = distance travelled, bend = turning in-plane, twist = turning into a fresh dimension. <em>Analysis only — never a scoring term.</em></p>
+      <gesture-hull id="breed-gesture" points="[]"></gesture-hull>
+    </div>
+    <div id="log"></div>
+  </div>
   <div id="stripwrap"><div id="strip"></div></div>
 </div>
 <script>window.onerror=function(m,s,l,c){document.title='ERR: '+m+' @'+l+':'+c;};</script>
+<script type="module" src="https://cdn.jsdelivr.net/gh/SuperInstance/gesture-kit@main/src/widget.js"></script>
 <script src="graph.js"></script>
 <script src="engine.js"></script>
 <script type="module" src="app.js"></script>
